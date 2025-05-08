@@ -21,7 +21,7 @@ This notebook presents a **data cleaning and modeling pipeline** aiming to predi
 <a id="data-loading"></a>
 ## 1. Data Loading
 
-- Load the main dataset of property listings.
+- Load the main dataset of property listings (`Kangaroo.csv`).
 - Enrich the data by merging with an auxiliary dataset (`data.csv`) containing latitude/longitude, energy consumption, and cadastral information.
 
 ---
