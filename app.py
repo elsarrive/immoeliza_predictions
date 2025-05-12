@@ -1,5 +1,46 @@
 import streamlit as sl
+import requests
 import predictions_elsa as p
+import numpy as np 
+
+Type = ""  # string, obligatoire pour Pydantic: valeur vide = missing
+Subtype = ""  # string
+BedroomCount = 0  # nombre de chambres (int ou float, selon backend)
+BathroomCount = 0  # int/float
+Province = ""  # string
+Locality = ""  # string
+Postcode = ""  # string (ou int si c'est géré ainsi côté backend)
+HabitableSurface = 0  # int/float surface
+HasAttic = False  # bool
+HasBasement = False  # bool
+HasDressingRoom = False  # bool
+HasDinningRoom = False  # bool
+BuildingCondition = ""  # string
+BuildingConstructionYear = None  # int/float ou None si inconnu
+FacadeCount = 0  # int
+has_lift = False  # bool
+flood_zone = None  # string ou None
+HeatingType = ""  # string
+HasHeatPump = False  # bool
+HasPhotovoltaicPanels = False  # bool
+HasThermicPanels = False  # bool
+KitchenType = ""  # string
+LandSurface = 0  # int/float
+HasLivingRoom = False  # bool
+has_garden = False  # bool
+garden_area = 0  # int/float
+ParkingIndoor = 0  # int
+ParkingOutdoor = 0  # int
+HasAirConditioning = False  # bool
+HasArmoredDoor = False  # bool
+HasVisiophone = False  # bool
+HasOffice = False  # bool
+ToiletCount = 0  # int
+has_swimming = False  # bool
+HasFireplace = False  # bool
+has_terrace = False  # bool
+terrace_area = 0  # int/float
+EpcScore = ""  # int/float ou None si inconnu
 
 def markdown20(text):
     sl.markdown(f"<span style='font-size:20px'>{text}</span>", unsafe_allow_html=True)
@@ -90,7 +131,7 @@ HasHeatPump = sl.checkbox('Has heat pump')
 HasPhotovoltaicPanels = sl.checkbox('Has photovoltaic panels')
 HasThermicPanels = sl.checkbox('Has thermic panels')
 HasAirConditioning = sl.checkbox('Has air conditionning')
-EpcScore = sl.selectbox('What\'s the EPC (PEB) score?', p.df['epcScore'][~p.df['epcScore'].isin(p.epc_unwanted)].dropna().sort_values().unique())
+EpcScore = sl.selectbox('What\'s the EPC (PEB) score?', ["A++", "A+", "A", "B", "C", "D", "E", "F", "G"])
 HeatingType = sl.selectbox('What\'s the heating type?', sorted(p.df.heatingType.dropna().unique()))
 
 
@@ -103,4 +144,64 @@ ParkingIndoor = sl.slider(label= 'Parking places indoor', min_value=0, max_value
 ParkingOutdoor = sl.slider(label= 'Parking places outdoor', min_value=0, max_value=3)
 
 
+sl.markdown("----")
+if sl.button('Prediction'):
+    input_dict = { 
+        'type' : Type, 
+        'subtype' : Subtype,
+        'bedroomCount' : BedroomCount, 
+        'bathroomCount' : BathroomCount,
+        'province' : Province,
+        'locality' : Locality,
+        'postCode' : Postcode,
+        'habitableSurface' : HabitableSurface,
+        'hasAttic' : HasAttic,
+        'hasBasement' : HasBasement,
+        'hasDressingRoom' : HasDressingRoom,
+        'hasDiningRoom' : HasDinningRoom,
+        'buildingCondition' : BuildingCondition,
+        'buildingConstructionYear' : BuildingConstructionYear,
+        'facedeCount' : FacadeCount,
+        'hasLift' : has_lift,
+        'floodZoneType' : flood_zone,
+        'heatingType' : HeatingType,
+        'hasHeatPump' : HasHeatPump,
+        'hasPhotovoltaicPanels' : HasPhotovoltaicPanels,
+        'hasThermicPanels' : HasThermicPanels,
+        'kitchenType' : KitchenType,
+        'landSurface' : LandSurface,
+        'hasLivingRoom' : HasLivingRoom,
+        'hasGarden' : has_garden,
+        'gardenSurface' : garden_area,
+        'parkingCountIndoor' : ParkingIndoor,
+        'parkingCountOutdoor' : ParkingOutdoor,
+        'hasAirConditioning' : HasAirConditioning,
+        'hasArmoredDoor' : HasArmoredDoor,
+        'hasVisiophone' : HasVisiophone,
+        'hasOffice' : HasOffice,
+        'toiletCount' : ToiletCount,
+        'hasSwimmingPool' : has_swimming,
+        'hasFireplace' : HasFireplace,
+        'hasTerrace' : has_terrace,
+        'terraceSurface' : terrace_area,
+        'epcScore' : EpcScore
+        }
+    
+    def convert_to_python(elem):
+        if isinstance(elem, np.generic):
+            return elem.item()
+        return elem 
+    
+    input_dict = {key : convert_to_python(value) for key, value in input_dict.items()}
 
+    
+    response = requests.post(
+        "http://localhost:8502",
+        json=input_dict
+    )
+
+    if response.status_code == 200:
+        sl.success(f"Résultat : {response.json()}")
+
+    else: 
+        sl.error(f"Erreur API : {response.text}")

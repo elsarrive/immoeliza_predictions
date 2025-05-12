@@ -11,13 +11,14 @@ from sklearn.preprocessing import StandardScaler
 
 import xgboost as xgb
 
+import pickle
+
 
 df = pd.read_csv('Kangaroo.csv')
-df.columns
-
+df.drop(columns=['Unnamed: 0'], axis=1, inplace=True)
 
 # # CLEANING FUNCTION
-epc_unwanted = ['C_A', 'F_C', 'G_C', 'D_C', 'F_D', 'E_C', 'G_E', 'E_D', 'C_B', 'X', 'G_F']
+
 def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     """
     This function is cleaning the dataframe. The steps are:
@@ -63,8 +64,8 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     """
     
     #EPC SCORE
-    
-    df = df[~df['epcScore'].isin(epc_unwanted)]
+    epc_unwanted = ['C_A', 'F_C', 'G_C', 'D_C', 'F_D', 'E_C', 'G_E', 'E_D', 'C_B', 'X', 'G_F']
+    df_epc = df[~df['epcScore'].isin(epc_unwanted)].copy()
 
     wallonia_provinces = ['Liège', 'Walloon Brabant', 'Namur', 'Hainaut', 'Luxembourg']
     flanders_provinces = ['Antwerp', 'Flemish Brabant', 'East Flanders', 'West Flanders', 'Limburg']
@@ -105,12 +106,12 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         'G' : 350,
     }
 
-    df.loc[df['province'].isin(wallonia_provinces), 'epc_enum'] = df['epcScore'].map(wallonia_epc_map).apply(pd.to_numeric)
-    df.loc[df['province'].isin(flanders_provinces), 'epc_enum'] = df['epcScore'].map(flanders_epc_map).apply(pd.to_numeric)
-    df.loc[df['province'] == 'Brussels', 'epc_enum'] = df['epcScore'].map(brussels_epc_map).apply(pd.to_numeric)
+    df_epc.loc[df_epc['province'].isin(wallonia_provinces), 'epc_enum'] = df_epc['epcScore'].map(wallonia_epc_map).apply(pd.to_numeric)
+    df_epc.loc[df_epc['province'].isin(flanders_provinces), 'epc_enum'] = df_epc['epcScore'].map(flanders_epc_map).apply(pd.to_numeric)
+    df_epc.loc[df_epc['province'] == 'Brussels', 'epc_enum'] = df_epc['epcScore'].map(brussels_epc_map).apply(pd.to_numeric)
 
     # REMOVE ERROS / TOO BIG VALUES
-    df_without_outliers = df
+    df_without_outliers = df_epc.copy()
     df_without_outliers.loc[df_without_outliers['bedroomCount'] >= 100, 'bedroomCount'] = np.nan
     df_without_outliers.loc[df_without_outliers['bathroomCount'] >= 100, 'bathroomCount'] = np.nan
     df_without_outliers.loc[df_without_outliers['toiletCount'] >= 25, 'toiletCount'] = np.nan
@@ -133,14 +134,14 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         True: 1}
 
     for col in booleans_columns:
-        df_without_outliers[col] = df_without_outliers[col].replace('nan', 'false') #parfois je pense qu'il est écrit nan et c'est pas NaN
-        df_without_outliers[col] = df_without_outliers[col].map(boolean_to_num)
+        df_without_outliers.loc[:, col] = df_without_outliers[col].replace('nan', 'false') #parfois je pense qu'il est écrit nan et c'est pas NaN
+        df_without_outliers.loc[:, col] = df_without_outliers[col].map(boolean_to_num)
 
     
     # CREATE A PARKING COLUMN (INDOOR + OUTDOOR) 
-    df_without_outliers['parkingCount'] = df_without_outliers[['parkingCountIndoor', 'parkingCountOutdoor']].sum(axis=1, min_count=1)
-    df_without_outliers[['parkingCount', 'parkingCountIndoor', 'parkingCountOutdoor']]
-    
+    df_with_park = df_without_outliers.copy()
+    df_with_park.loc[:, 'parkingCount'] = df_with_park[['parkingCountIndoor', 'parkingCountOutdoor']].sum(axis=1, min_count=1)
+
     # LABEL-ENCODING FOR CATEGORIES
     ## subgroup
     subtype_to_group = {
@@ -176,24 +177,28 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     "PAVILION": 5
     }
 
-    df_without_outliers.loc[:, 'subtype_group'] = df_without_outliers['subtype'].map(subtype_to_group).apply(pd.to_numeric)
+    df_subtype = df_with_park.copy()
+    df_subtype.loc[:, 'subtype_group'] = df_subtype['subtype'].map(subtype_to_group).apply(pd.to_numeric)
 
     ## building construction year
+    df_year = df_subtype.copy()
     years_bins = [1850, 1875, 1900, 1925, 1950, 1975, 2000, 2025, 2050]
     years_labels = [1, 2, 3, 4, 5, 6, 7, 8]
-    df_without_outliers.loc[:, 'buildingConstructionYear_mapping'] = pd.cut(
-    df_without_outliers['buildingConstructionYear'], 
+    df_year.loc[:, 'buildingConstructionYear_mapping'] = pd.cut(
+    df_year['buildingConstructionYear'], 
     bins= years_bins,
     labels= years_labels)
 
     ## type
-    df_without_outliers.loc[:, 'isHouse'] = df_without_outliers['type'].map({ 
+    df_type = df_year.copy()
+    df_type.loc[:, 'isHouse'] = df_type['type'].map({ 
         "APARTMENT" : 0,
         "HOUSE" : 1
     }).apply(pd.to_numeric)
 
     ## provinces
-    df_without_outliers.province.unique()
+    df_province = df_type.copy()
+    df_province.province.unique()
     province_mapping = { 
         'Brussels' : 1,
         'Luxembourg' : 2,
@@ -208,9 +213,10 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         'Hainaut' : 11
     }
 
-    df_without_outliers.loc[:, 'province_mapping'] = df_without_outliers['province'].map(province_mapping).apply(pd.to_numeric)
+    df_province.loc[:, 'province_mapping'] = df_province['province'].map(province_mapping).apply(pd.to_numeric)
 
     ## building condition
+    df_condition = df_province.copy()
     condition_mapping = { 
             'GOOD' : 5,
             'TO_BE_DONE_UP' : 4,
@@ -220,9 +226,10 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
             'TO_RESTORE' : 0
         }
 
-    df_without_outliers['buildingCondition_mapping'] = df_without_outliers['buildingCondition'].map(condition_mapping).apply(pd.to_numeric)
+    df_condition.loc[:, 'buildingCondition_mapping'] = df_condition['buildingCondition'].map(condition_mapping).apply(pd.to_numeric)
 
     ## flood zone type
+    df_flood = df_condition.copy()
     floodZoneType_mapping = {
             "NON_FLOOD_ZONE": 1,
             "POSSIBLE_N_CIRCUMSCRIBED_WATERSIDE_ZONE": 2,
@@ -235,9 +242,10 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
             "RECOGNIZED_N_CIRCUMSCRIBED_FLOOD_ZONE": 9
             }
 
-    df_without_outliers['floodZoneType_mapping'] = df_without_outliers['floodZoneType'].map(floodZoneType_mapping).apply(pd.to_numeric)
+    df_flood.loc[:, 'floodZoneType_mapping'] = df_flood['floodZoneType'].map(floodZoneType_mapping).apply(pd.to_numeric)
 
     ## heating type
+    df_heat = df_flood.copy()
     heatingType_mapping = { 
         'GAS' : 1, 
         'FUELOIL' : 2, 
@@ -248,9 +256,10 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         'CARBON' : 4
     }
 
-    df_without_outliers.loc[:, 'heatingType_mapping'] = df_without_outliers['heatingType'].map(heatingType_mapping).apply(pd.to_numeric)
+    df_heat.loc[:, 'heatingType_mapping'] = df_heat['heatingType'].map(heatingType_mapping).apply(pd.to_numeric)
 
     ## kitchen type
+    df_kitchen = df_heat.copy()
     kitchenType_mapping = {
         "NOT_INSTALLED": 0,
         "USA_UNINSTALLED": 0,
@@ -265,34 +274,38 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         "HYPER_EQUIPPED": 3,
         }
 
-    df_without_outliers.loc[:, 'kitchenType_mapping'] = df.kitchenType.map(kitchenType_mapping).apply(pd.to_numeric)
+    df_kitchen.loc[:, 'kitchenType_mapping'] = df_kitchen.kitchenType.map(kitchenType_mapping).apply(pd.to_numeric)
 
     ## facade count
+    df_facade = df_kitchen.copy()
     facedeCount_bins = [0, 1, 2, 3, 4, float('inf')]
     facedeCount_labels = [1, 2, 3, 4, 5]
 
-    df_without_outliers.loc[:, 'facadecount_mapping'] = pd.cut( 
-        df_without_outliers['facedeCount'],
+    df_facade.loc[:, 'facadecount_mapping'] = pd.cut( 
+        df_facade['facedeCount'],
         bins = facedeCount_bins,
         labels = facedeCount_labels,
         include_lowest= True
     ).apply(pd.to_numeric)
 
     # MISSING VALUE FOR ...SURFACE
-    df_without_outliers.loc[df_without_outliers['hasGarden']  == 0, 'gardenSurface'] = 0
-    df_without_outliers.loc[df_without_outliers['hasTerrace']  == 0, 'terraceSurface'] = 0
+    df_hasG_hasT = df_facade.copy()
+    df_hasG_hasT.loc[df_hasG_hasT['hasGarden']  == 0, 'gardenSurface'] = 0
+    df_hasG_hasT.loc[df_hasG_hasT['hasTerrace']  == 0, 'terraceSurface'] = 0
 
     # IF NO BATHROOM OR BEDROOM COUNT: DROP
+    df_no_bed_bath = df_hasG_hasT.copy()
     if is_training: 
-        df_new = df_without_outliers.dropna(subset=['bedroomCount', 'bathroomCount'])
+        df_no_bed_bath = df_no_bed_bath.dropna(subset=['bedroomCount', 'bathroomCount'])
 
     else:
-        df_new = df_without_outliers
+        df_no_bed_bath = df_no_bed_bath
     
     # IMPORT FROM AN OTHER DATASET
+    df_with_giraffe = df_no_bed_bath.copy()
     if is_training : 
         df_giraffe = pd.read_csv('data.csv')
-        df_with_giraffe = df_new.merge(
+        df_with_giraffe = df_with_giraffe.merge(
         df_giraffe[['propertyId', 'latitude', 'longitude', 'primaryEnergyConsumptionPerSqm', 'cadastralIncome']],  
         how='inner',
         left_on='id',
@@ -300,7 +313,7 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         )
 
     else: 
-        df_with_giraffe = df_new
+        df_with_giraffe = df_with_giraffe
         giraffe_cols = [
         "latitude",
         "longitude",
@@ -310,15 +323,17 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         for col in giraffe_cols:
             if col not in df.columns:
                 df[col] = 0
+
     # PRICE MARGIN
+    df_margin = df_with_giraffe.copy()
     if is_training: 
-        df_price_margin = df_with_giraffe[(df_with_giraffe['price'] >= 50000) & (df_with_giraffe['price'] <= 1000000)]
+        df_margin = df_margin[(df_margin['price'] >= 50000) & (df_margin['price'] <= 1000000)]
     
     else: 
-        df_price_margin = df_with_giraffe
+        df_margin = df_margin
 
     # REMOVE ROWS
-    df_dropped = df_price_margin.drop(columns=['Unnamed: 0', 'url', 'type', 'subtype', 'province', 'monthlyCost', 'diningRoomSurface', 'buildingCondition', 'buildingConstructionYear', 'facedeCount', 'floorCount', 'streetFacadeWidth', 'floodZoneType', 'kitchenType', 'hasBalcony', 'gardenOrientation', 'terraceOrientation', 'accessibleDisabledPeople', 'epcScore', 'kitchenSurface', 'livingRoomSurface', 'roomCount', 'parkingCountIndoor', 'parkingCountOutdoor', 'locality', 'propertyId', 'epcScore', 'hasTerrace', 'hasGarden', 'heatingType'], errors='ignore')
+    df_dropped = df_margin.drop(columns=['url', 'type', 'subtype', 'province', 'monthlyCost', 'diningRoomSurface', 'buildingCondition', 'buildingConstructionYear', 'facedeCount', 'floorCount', 'streetFacadeWidth', 'floodZoneType', 'kitchenType', 'hasBalcony', 'gardenOrientation', 'terraceOrientation', 'accessibleDisabledPeople', 'epcScore', 'kitchenSurface', 'livingRoomSurface', 'roomCount', 'parkingCountIndoor', 'parkingCountOutdoor', 'locality', 'propertyId', 'hasTerrace', 'hasGarden', 'heatingType'], errors='ignore')
 
     return df_dropped
 
@@ -397,8 +412,6 @@ def transform_cleaning_traintestsplit(df, stats, is_training=True):
     #### Remove rows where there is any missing 
     """
 
-    df = df.copy()
-
     # REGRESSION IMPUTATION
     for feature, features_related in [('toiletCount', ['bedroomCount', 'bathroomCount', 'toiletCount', 'habitableSurface']),
                       ('habitableSurface', ['bathroomCount', 'bedroomCount', 'parkingCount', 'isHouse', 'habitableSurface']),
@@ -427,7 +440,7 @@ def transform_cleaning_traintestsplit(df, stats, is_training=True):
 
     # REMOVE ROWS WHERE NAN
     if is_training :
-        df_final = df[~df.isna().any(axis=1)].copy()
+        df_final = df[~df.isna().any(axis=1)]
 
     else: 
         df_final = df
@@ -437,12 +450,15 @@ def transform_cleaning_traintestsplit(df, stats, is_training=True):
 
 # # TRAIN TEST SPLIT
 
+
 df_final = cleaning_dataframe(df, df_giraffe= True)
 
 y = df_final['price']
 X = df_final.drop(['price', 'id'], axis=1)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+X.columns
 
 
 # Cleaning X_train with the imputations 
@@ -457,16 +473,21 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train_clean)
 X_test_scaled = scaler.transform(X_test_clean)
 
+
 # # XGBOOST MODEL
 
 xgb_model = xgb.XGBRegressor(n_estimators=3000, random_state=43, learning_rate=0.05, subsample= 0.8)
 
+
 xgb_model.fit(X_train_scaled, y_train)
+
 
 y_pred = xgb_model.predict(X_test_scaled)
 
+
 r2 = r2_score(y_test, y_pred)
 print("R2 Score:", r2)
+
 
 rmse = np.sqrt(mean_squared_error(y_test, y_pred))
 print("Root Mean Squared Error (RMSE):", rmse, "€")
@@ -477,124 +498,14 @@ print("Mean Absolute Error (RAE):", rae, "€")
 mse = mean_squared_error(y_test, y_pred)
 print("Mean Squared Error:", mse)
 
-import joblib 
 
-# Save the model
-joblib.dump(xgb_model, 'my_xgb_model_immo.pkl') 
+# # Save the model and the scaler
 
 
-# ## DEPLOYMENT PREPARATION
+with open("scaler.pkl", "wb") as f:
+    pickle.dump(scaler, f)
 
-df_final_order = ['id', 'bedroomCount', 'bathroomCount', 'habitableSurface', 'hasAttic',
-       'hasBasement', 'hasDressingRoom', 'hasDiningRoom', 'hasLift',
-       'hasHeatPump', 'hasPhotovoltaicPanels', 'hasThermicPanels',
-       'landSurface', 'hasLivingRoom', 'gardenSurface', 'hasAirConditioning',
-       'hasArmoredDoor', 'hasVisiophone', 'hasOffice', 'toiletCount',
-       'hasSwimmingPool', 'hasFireplace', 'terraceSurface', 'price',
-       'epc_enum', 'parkingCount', 'subtype_group',
-       'buildingConstructionYear_mapping', 'isHouse', 'province_mapping',
-       'buildingCondition_mapping', 'floodZoneType_mapping',
-       'heatingType_mapping', 'kitchenType_mapping', 'facadecount_mapping',
-       'latitude', 'longitude', 'primaryEnergyConsumptionPerSqm',
-       'cadastralIncome'],
-
-house_or_appart = { 
-    'Unnamed: 0' : np.nan,
-    'id' : np.nan,
-    'url' : np.nan,
-    'type' : 'HOUSE',
-    'subtype' : 'HOUSE',
-    'bedroomCount' : 2,
-    'bathroomCount' : 2, 
-    'province' : 'Liège', 
-    'locality' : 'Liège',
-    'postCode' : 4000,
-    'habitableSurface' : 350, 
-    'roomCount' : np.nan,
-    'monthlyCost' : np.nan,
-    'hasAttic' : 'False',
-    'hasBasement' : 'False',
-    'hasDressingRoom' : np.nan,
-    'diningRoomSurface' : np.nan,
-    'hasDiningRoom' : 'False',
-    'buildingCondition' : 'AS_NEW',
-    'buildingConstructionYear' : 1899,
-    'facedeCount' : 10,
-    'floorCount' : np.nan,
-    'streetFacadeWidth' : np.nan,
-    'hasLift' : 'False',
-    'floodZoneType' : np.nan, 
-    'heatingType' : 'GAS',
-    'hasHeatPump' : 'False',
-    'hasPhotovoltaicPanels' : 'True',
-    'hasThermicPanels' : np.nan,
-    'kitchenSurface' : np.nan,
-    'kitchenType' : 'INSTALLED',
-    'landSurface' : 100,
-    'hasLivingRoom' : 'False',
-    'livingRoomSurface' : np.nan,
-    'hasBalcony' : 'False',
-    'hasGarden' : 'False',
-    'gardenSurface' : 0,
-    'gardenOrientation' : np.nan,
-    'parkingCountIndoor' : 0,
-    'parkingCountOutdoor' : np.nan,
-    'hasAirConditioning' : 'False',
-    'hasArmoredDoor' : np.nan,
-    'hasVisiophone' : np.nan,
-    'hasOffice' : 'True',
-    'toiletCount' : 3,
-    'hasSwimmingPool' : 'False',
-    'hasFireplace' : np.nan,
-    'hasTerrace' : 'False',
-    'terraceSurface' : np.nan,
-    'terraceOrientation' : np.nan,
-    'accessibleDisabledPeople' : np.nan,
-    'epcScore' : 'C',
-    'price' : np.nan
-
-}
-
-# 1. Création du DataFrame à partir du dict 'propre' (raw features)
-df_new = pd.DataFrame([house_or_appart])
-
-# 2. Nettoyage & feature engineering
-df_new_clean = cleaning_dataframe(df_new, is_training=False)
-
-# 3. Imputations
-df_new_clean_imputed = transform_cleaning_traintestsplit(df_new_clean, stats_from_X_train, is_training=False)
-
-# 4. Scaling (en gardant le fit de tes données d’entraînement)
-columns_for_model = scaler.feature_names_in_.tolist()
-df_new_clean_imputed = df_new_clean_imputed[columns_for_model]
-
-df_new_scaled = scaler.transform(df_new_clean_imputed)
-
-# 5. Prédiction
-predicted_price = xgb_model.predict(df_new_scaled)
-
-print(f"Le prix prédit est {predicted_price[0]:,.0f} €".replace(',', ' '))
-
-
-"""X_small = X_train_clean.copy()
-X_large = X_train_clean.copy()
-
-X_small['col'] = X_small['col'].min()
-X_large['col'] = X_large['col'].max()
-
-X_small_scaled = scaler.transform(X_small)
-X_large_scaled = scaler.transform(X_large)
-
-pred_small = xgb_model.predict(X_small_scaled[:1])
-pred_large = xgb_model.predict(X_large_scaled[:1])
-
-print("Prix prédit (petite surface):", pred_small)
-print("Prix prédit (grande surface):", pred_large)
-"""
-
-'''importances = xgb_model.feature_importances_
-for col, imp in zip(X_train.columns, importances):
-    print(f"{col}: {imp:.4f}")'''
-
+with open("model.pkl", "wb") as f:
+    pickle.dump(xgb_model, f)
 
 
