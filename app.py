@@ -1,54 +1,73 @@
 import streamlit as sl
-import requests
 import predictions_elsa as p
+import pandas as pd
 import numpy as np 
+import pickle
 
-Type = ""  # string, obligatoire pour Pydantic: valeur vide = missing
-Subtype = ""  # string
-BedroomCount = 0  # nombre de chambres (int ou float, selon backend)
-BathroomCount = 0  # int/float
-Province = ""  # string
-Locality = ""  # string
-Postcode = ""  # string (ou int si c'est géré ainsi côté backend)
-HabitableSurface = 0  # int/float surface
-HasAttic = False  # bool
-HasBasement = False  # bool
-HasDressingRoom = False  # bool
-HasDinningRoom = False  # bool
-BuildingCondition = ""  # string
-BuildingConstructionYear = None  # int/float ou None si inconnu
-FacadeCount = 0  # int
-has_lift = False  # bool
-flood_zone = None  # string ou None
-HeatingType = ""  # string
-HasHeatPump = False  # bool
-HasPhotovoltaicPanels = False  # bool
-HasThermicPanels = False  # bool
-KitchenType = ""  # string
-LandSurface = 0  # int/float
-HasLivingRoom = False  # bool
-has_garden = False  # bool
-garden_area = 0  # int/float
-ParkingIndoor = 0  # int
-ParkingOutdoor = 0  # int
-HasAirConditioning = False  # bool
-HasArmoredDoor = False  # bool
-HasVisiophone = False  # bool
-HasOffice = False  # bool
-ToiletCount = 0  # int
-has_swimming = False  # bool
-HasFireplace = False  # bool
-has_terrace = False  # bool
-terrace_area = 0  # int/float
-EpcScore = ""  # int/float ou None si inconnu
+
+##############################################
+#### IMPORTATION MODEL AND INITIALIZATION ####
+##############################################
+
+@sl.cache_resource  
+def load_model():
+    with open("scaler.pkl", "rb") as f_scaler:
+        scaler = pickle.load(f_scaler)
+    with open("model.pkl", "rb") as f_model:
+        model = pickle.load(f_model)
+    return scaler, model
+
+scaler, model = load_model()
+
+HasAttic = False  
+HasBasement = False  
+HasDressingRoom = False  
+HasDinningRoom = False  
+has_lift = False  
+HasHeatPump = False  
+HasPhotovoltaicPanels = False  
+HasThermicPanels = False  
+HasLivingRoom = False  
+has_garden = False  
+HasAirConditioning = False  
+HasArmoredDoor = False  
+HasVisiophone = False  
+HasOffice = False  
+has_swimming = False  
+HasFireplace = False  
+has_terrace = False  
+
+def user_input_preparation(input_dict):
+    input_dict['id'] = 0
+    input_dict['url'] = ""
+    input_dict['roomCount'] = 0
+    input_dict['monthlyCost'] = 0
+    input_dict['diningRoomSurface'] = 0
+    input_dict['terraceOrientation'] = ""
+    input_dict['accessibleDisabledPeople'] = False
+    input_dict['floorCount'] = 0
+    input_dict['streetFacadeWidth'] = 0
+    input_dict['kitchenSurface'] = 0
+    input_dict['livingRoomSurface'] = 0
+    input_dict['hasBalcony'] = False
+    input_dict['gardenOrientation'] = ""
+    input_dict['price'] = 0
+
+    return input_dict
+
+
+##############################################
+###### START OF THE STREAMLIT INTERFACE ######
+##############################################
 
 def markdown20(text):
     sl.markdown(f"<span style='font-size:20px'>{text}</span>", unsafe_allow_html=True)
 
 sl.title("ImmoEliza")
 sl.header("🏠 Real Estate Price Prediction 🏠")
-sl.markdown("----")
 
+# GENERAL INFORMATIONS
+sl.markdown("----")
 sl.subheader('ℹ️ General informations')
 Type = sl.selectbox("House or appartment?", ["HOUSE", "APPARTMENT"])
 
@@ -65,27 +84,24 @@ BuildingCondition = sl.selectbox("Which condition?", p.df.buildingCondition.drop
 BuildingConstructionYear = sl.number_input(label="Construction year", min_value=1850, max_value=2050, value= 2000)
 FacadeCount = sl.number_input(label= "Number of facades", min_value=1, max_value=20)
 
+# GEOGRAPHICAL INFORMATIONS
 sl.markdown("----")
 sl.subheader("📍 Geographical informations")
-
 Province = sl.selectbox("Province", ['Brussels', 'Luxembourg', 'Antwerp', 'Flemish Brabant',
        'East Flanders', 'West Flanders', 'Liège', 'Walloon Brabant',
        'Limburg', 'Namur', 'Hainaut'])
 Locality = sl.selectbox("Locality", sorted(p.df.locality.unique()))
 Postcode = sl.selectbox("Postcode", sorted(p.df.postCode.unique()))
 
+# ROOMS
 sl.markdown("----")
 sl.subheader('🛏️ Rooms')
-
 markdown20('How many bedrooms in your property?')
 BedroomCount = sl.slider("Bedrooms", 1, 8, 2)
-
 markdown20('How many bathrooms in your property?')
 BathroomCount = sl.slider("Bathrooms", 1, 5, 2)
-
 markdown20('How many toilets in your property?')
 ToiletCount = sl.slider("Toilets", 1, 6, 2)
-
 HasDinningRoom = sl.checkbox('Has a dinning room')
 HasLivingRoom = sl.checkbox('Has a living room')
 HasDressingRoom = sl.checkbox('Has a dressing room')
@@ -94,19 +110,18 @@ HasAttic = sl.checkbox('Has an attic')
 HasBasement = sl.checkbox('Has a basement')
 KitchenType = sl.selectbox('What\'s the kitchen type?', ['NOT_INSTALLED', 'SEMI_EQUIPPED', 'INSTALLED', 'HYPER_EQUIPPED'])
 
+# SURFACES
 sl.markdown("----")
 sl.subheader('📐 Surfaces')
-
 markdown20('What\'s the size of your property?')
 HabitableSurface = sl.slider("Habitable surface", 0, 800, 200, step=25)
 markdown20('What\'s the land surface?')
 LandSurface = sl.slider("Land surface", 0, 2000, 150, step=25)
 
+# EXTERIOR SPACE
 sl.markdown("----")
 sl.subheader('🌳 Exterior space')
-
 has_terrace = sl.checkbox("Has a terrace")
-
 if has_terrace:
     terrace_area = sl.slider("What's the size of the terrace?", 0, 250, 15, step=5)
     sl.write("Superficie sélectionnée :", terrace_area)
@@ -114,17 +129,16 @@ else:
     terrace_area = None
 
 has_garden = sl.checkbox("Has a garden")
-
 if has_garden:
     garden_area = sl.slider("What's the size of the garden?", 0, 2000, 150, step=25)
     sl.write("Superficie sélectionnée :", garden_area)
 else:
-    terrace_area = None
+    garden_area = None
 
 has_swimming = sl.checkbox('Has a swimmingpool')
-
 flood_zone = sl.selectbox("There is a kind of flood zone?", p.df.floodZoneType.dropna().unique())
 
+# ENERGY
 sl.markdown("----")
 sl.subheader('♻️ Energy')
 HasHeatPump = sl.checkbox('Has heat pump')
@@ -134,7 +148,7 @@ HasAirConditioning = sl.checkbox('Has air conditionning')
 EpcScore = sl.selectbox('What\'s the EPC (PEB) score?', ["A++", "A+", "A", "B", "C", "D", "E", "F", "G"])
 HeatingType = sl.selectbox('What\'s the heating type?', sorted(p.df.heatingType.dropna().unique()))
 
-
+# EXTRA
 sl.markdown("----")
 sl.subheader('✨ Extra')
 HasFireplace = sl.checkbox('Has a fire place')
@@ -143,10 +157,10 @@ HasVisiophone = sl.checkbox('Has a visiophone')
 ParkingIndoor = sl.slider(label= 'Parking places indoor', min_value=0, max_value=5)
 ParkingOutdoor = sl.slider(label= 'Parking places outdoor', min_value=0, max_value=3)
 
-
+# PREDICTION
 sl.markdown("----")
 if sl.button('Prediction'):
-    input_dict = { 
+    input_dict = { # LINK TO THE MODEL'S COLUMNS NAMES
         'type' : Type, 
         'subtype' : Subtype,
         'bedroomCount' : BedroomCount, 
@@ -187,21 +201,28 @@ if sl.button('Prediction'):
         'epcScore' : EpcScore
         }
     
-    def convert_to_python(elem):
-        if isinstance(elem, np.generic):
-            return elem.item()
-        return elem 
-    
-    input_dict = {key : convert_to_python(value) for key, value in input_dict.items()}
+    # add features that is not required by user input (but required by the functions associated with the model)
+    input_dict_complete = user_input_preparation(input_dict)
 
-    
-    response = requests.post(
-        "http://localhost:8502",
-        json=input_dict
-    )
+    # creation of a dataframe with the input dictionnary 
+    df_new = pd.DataFrame([input_dict_complete])
 
-    if response.status_code == 200:
-        sl.success(f"Résultat : {response.json()}")
+    # cleaning function
+    df_new_clean = p.cleaning_dataframe(df_new, is_training=False)
 
-    else: 
-        sl.error(f"Erreur API : {response.text}")
+    # imputations
+    df_new_clean_imputed = p.transform_cleaning_traintestsplit(df_new_clean, p.stats_from_X_train, is_training=False)
+
+    # dataframe with the columns in the correct order  -> scaling
+    columns_for_model = scaler.feature_names_in_.tolist()
+    for col in columns_for_model:
+        if col not in df_new_clean_imputed:
+            df_new_clean_imputed[col] = -1 # to be sure not have missing values
+
+    df_new_clean_imputed = df_new_clean_imputed[columns_for_model]
+    df_new_scaled = scaler.transform(df_new_clean_imputed)
+
+    # prediction
+    predicted_price = model.predict(df_new_scaled)
+
+    sl.write(f"Le prix prédit est {predicted_price[0]:,.0f} €".replace(',', ' '))

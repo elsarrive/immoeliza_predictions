@@ -1,18 +1,13 @@
 
 import pandas as pd
 import numpy as np
-
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
-
 import xgboost as xgb
-
 import pickle
-
 
 df = pd.read_csv('Kangaroo.csv')
 df.drop(columns=['Unnamed: 0'], axis=1, inplace=True)
@@ -62,7 +57,6 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     #### Remove columns we don't use
 
     """
-    
     #EPC SCORE
     epc_unwanted = ['C_A', 'F_C', 'G_C', 'D_C', 'F_D', 'E_C', 'G_E', 'E_D', 'C_B', 'X', 'G_F']
     df_epc = df[~df['epcScore'].isin(epc_unwanted)].copy()
@@ -81,7 +75,6 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         'F' : 450,
         'G' : 510
     }
-
     flanders_epc_map = {
         'A++' : 0,
         'A+' : 0,
@@ -93,7 +86,6 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         'F' : 500,
         'G' : 510,
     }
-
     brussels_epc_map = { 
         'A++' : 0,
         'A+' : 0,
@@ -303,26 +295,33 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     
     # IMPORT FROM AN OTHER DATASET
     df_with_giraffe = df_no_bed_bath.copy()
+
+    giraffe_cols = [
+    "latitude",
+    "longitude",
+    "primaryEnergyConsumptionPerSqm",
+    "cadastralIncome"
+    ]
+
     if is_training : 
         df_giraffe = pd.read_csv('data.csv')
         df_with_giraffe = df_with_giraffe.merge(
-        df_giraffe[['propertyId', 'latitude', 'longitude', 'primaryEnergyConsumptionPerSqm', 'cadastralIncome']],  
+        df_giraffe[['propertyId'] + giraffe_cols],  
         how='inner',
         left_on='id',
         right_on='propertyId'
         )
 
     else: 
-        df_with_giraffe = df_with_giraffe
-        giraffe_cols = [
-        "latitude",
-        "longitude",
-        "primaryEnergyConsumptionPerSqm",
-        "cadastralIncome"
-        ]
+        df_giraffe = pd.read_csv('data.csv')
+
         for col in giraffe_cols:
-            if col not in df.columns:
-                df[col] = 0
+            if col not in df_with_giraffe.columns:
+                if col in ['latitude', 'longitude']:
+                    df_with_giraffe[col] = df_giraffe[col].median()
+
+                else: 
+                    df_with_giraffe[col] = 0
 
     # PRICE MARGIN
     df_margin = df_with_giraffe.copy()
@@ -478,12 +477,9 @@ X_test_scaled = scaler.transform(X_test_clean)
 
 xgb_model = xgb.XGBRegressor(n_estimators=3000, random_state=43, learning_rate=0.05, subsample= 0.8)
 
-
 xgb_model.fit(X_train_scaled, y_train)
 
-
 y_pred = xgb_model.predict(X_test_scaled)
-
 
 r2 = r2_score(y_test, y_pred)
 print("R2 Score:", r2)
@@ -500,8 +496,6 @@ print("Mean Squared Error:", mse)
 
 
 # # Save the model and the scaler
-
-
 with open("scaler.pkl", "wb") as f:
     pickle.dump(scaler, f)
 
