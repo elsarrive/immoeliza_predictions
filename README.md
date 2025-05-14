@@ -18,7 +18,7 @@ ImmoEliza is a user-friendly web application that predicts property prices in Be
 
 2.  **Installing dependencies**
     We recommend using a virtual environment (optional but encouraged):
-    ``bash
+    ```bash
     python -m venv .venv
     source .venv/bin/activate # On Windows: .venv\Scripts\activate
     ```
