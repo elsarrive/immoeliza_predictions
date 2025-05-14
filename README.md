@@ -12,7 +12,7 @@ ImmoEliza is a user-friendly web application that predicts property prices in Be
 ## 🚀 Getting started
 1.  **Run the repository**
     ```bash
-    git clone [https://github.com/yourusername/immoeliza.git](https://github.com/elsarrive/immoeliza_predictions.git)
+    git clone https://github.com/elsarrive/immoeliza_predictions.git
     cd immoeliza_predictions
     ```
 
@@ -30,7 +30,19 @@ ImmoEliza is a user-friendly web application that predicts property prices in Be
 
 3.  **Prepare the data**
     Place your CSV data files named `Kangaroo.csv` and `data.csv` in the project folder (it should contain the property data expected by `cleaning_dataset.py`).
+    
+5. **Train the model**
+    Train and serialize the model and scaler (will create model.pkl and scaler.pkl):
+    ```
+    python XGBoost_model.py
+    ```
+    
+5. **Launch the web app**
+   ```
+    streamlit run app.py
+   ```
 
+    Visit the URL provided by Streamlit (usually (http://localhost:8502) in your browser.
 
 ## ⚙️ Prerequisites
 Minimum requirements:
