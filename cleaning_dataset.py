@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 
-df = pd.read_csv('Kangaroo.csv')
+df = pd.read_csv('dataset/Kangaroo.csv')
 df.drop(columns=['Unnamed: 0'], axis=1, inplace=True)
 
 # # CLEANING FUNCTION
@@ -308,7 +308,7 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         )
 
     else: 
-        df_giraffe = pd.read_csv('data.csv')
+        df_giraffe = pd.read_csv('dataset/data.csv')
 
         for col in giraffe_cols:
             if col not in df_with_giraffe.columns:
@@ -388,8 +388,6 @@ def stats(X_train):
     )
 
     return stats_from_X_train
-
-
 
 def transform_cleaning_traintestsplit(df, stats, is_training=True):
     """

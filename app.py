@@ -10,9 +10,9 @@ import pickle
 
 @sl.cache_resource  
 def load_model():
-    with open("scaler.pkl", "rb") as f_scaler:
+    with open("model_and_scaler/scaler.pkl", "rb") as f_scaler:
         scaler = pickle.load(f_scaler)
-    with open("model.pkl", "rb") as f_model:
+    with open("model_and_scaler/model.pkl", "rb") as f_model:
         model = pickle.load(f_model)
     return scaler, model
 
