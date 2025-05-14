@@ -11,9 +11,9 @@ ImmoEliza is a user-friendly web application that predicts property prices in Be
 
 ## 🚀 Getting started
 1.  **Run the repository**
-    bash
+    ```bash
     git clone [https://github.com/yourusername/immoeliza.git](https://github.com/elsarrive/immoeliza_predictions.git)
-    cd immoeliza_ppredictions
+    cd immoeliza_predictions
     ```
 
 2.  **Installing dependencies**
