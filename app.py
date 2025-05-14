@@ -1,9 +1,8 @@
+import XGBoost_model as m
+import cleaning_dataset as cl
 import streamlit as sl
-import predictions_elsa as p
 import pandas as pd
-import numpy as np 
 import pickle
-
 
 ##############################################
 #### IMPORTATION MODEL AND INITIALIZATION ####
@@ -80,7 +79,7 @@ if Type == 'HOUSE':
     Subtype = sl.selectbox("Which subtype?", ["HOUSE", "TOWN_HOUSE", "VILLA", "CHALET", "BUNGALOW",
     "COUNTRY_COTTAGE", "MANOR_HOUSE", "MANSION", "EXCEPTIONAL_PROPERTY", "CASTLE", "FARMHOUSE", "HOUSE_GROUP", "OTHER_PROPERTY", "PAVILION"])
 
-BuildingCondition = sl.selectbox("Which condition?", p.df.buildingCondition.dropna().unique())
+BuildingCondition = sl.selectbox("Which condition?", cl.df.buildingCondition.dropna().unique())
 BuildingConstructionYear = sl.number_input(label="Construction year", min_value=1850, max_value=2050, value= 2000)
 FacadeCount = sl.number_input(label= "Number of facades", min_value=1, max_value=20)
 
@@ -90,8 +89,8 @@ sl.subheader("📍 Geographical informations")
 Province = sl.selectbox("Province", ['Brussels', 'Luxembourg', 'Antwerp', 'Flemish Brabant',
        'East Flanders', 'West Flanders', 'Liège', 'Walloon Brabant',
        'Limburg', 'Namur', 'Hainaut'])
-Locality = sl.selectbox("Locality", sorted(p.df.locality.unique()))
-Postcode = sl.selectbox("Postcode", sorted(p.df.postCode.unique()))
+Locality = sl.selectbox("Locality", sorted(cl.df.locality.unique()))
+Postcode = sl.selectbox("Postcode", sorted(cl.df.postCode.unique()))
 
 # ROOMS
 sl.markdown("----")
@@ -136,7 +135,7 @@ else:
     garden_area = None
 
 has_swimming = sl.checkbox('Has a swimmingpool')
-flood_zone = sl.selectbox("There is a kind of flood zone?", p.df.floodZoneType.dropna().unique())
+flood_zone = sl.selectbox("There is a kind of flood zone?", cl.df.floodZoneType.dropna().unique())
 
 # ENERGY
 sl.markdown("----")
@@ -146,7 +145,7 @@ HasPhotovoltaicPanels = sl.checkbox('Has photovoltaic panels')
 HasThermicPanels = sl.checkbox('Has thermic panels')
 HasAirConditioning = sl.checkbox('Has air conditionning')
 EpcScore = sl.selectbox('What\'s the EPC (PEB) score?', ["A++", "A+", "A", "B", "C", "D", "E", "F", "G"])
-HeatingType = sl.selectbox('What\'s the heating type?', sorted(p.df.heatingType.dropna().unique()))
+HeatingType = sl.selectbox('What\'s the heating type?', sorted(cl.df.heatingType.dropna().unique()))
 
 # EXTRA
 sl.markdown("----")
@@ -208,10 +207,10 @@ if sl.button('Prediction'):
     df_new = pd.DataFrame([input_dict_complete])
 
     # cleaning function
-    df_new_clean = p.cleaning_dataframe(df_new, is_training=False)
+    df_new_clean = cl.cleaning_dataframe(df_new, is_training=False)
 
     # imputations
-    df_new_clean_imputed = p.transform_cleaning_traintestsplit(df_new_clean, p.stats_from_X_train, is_training=False)
+    df_new_clean_imputed = cl.transform_cleaning_traintestsplit(df_new_clean, m.stats_from_X_train, is_training=False)
 
     # dataframe with the columns in the correct order  -> scaling
     columns_for_model = scaler.feature_names_in_.tolist()
