@@ -16,7 +16,7 @@ ImmoEliza is a user-friendly web application that predicts property prices in Be
     cd immoeliza_predictions
     ```
 
-2.  **Installing dependencies**
+2.  **Installing dependencies**  
   We recommend using a virtual environment (optional but encouraged):
     ```bash
     python -m venv .venv
@@ -28,16 +28,16 @@ ImmoEliza is a user-friendly web application that predicts property prices in Be
     ```
     (If you don't have any `requirements.txt`, see below for a pip-ready list).
 
-4.  **Prepare the data**
+4.  **Prepare the data**  
   Place your CSV data files named `Kangaroo.csv` and `data.csv` in the project folder (it should contain the property data expected by `cleaning_dataset.py`).
     
-5. **Train the model**
+5. **Train the model**  
   Train and serialize the model and scaler (will create model.pkl and scaler.pkl):
     ```
     python XGBoost_model.py
     ```
     
-5. **Launch the web app**
+5. **Launch the web app**  
    ```
     streamlit run app.py
    ```
