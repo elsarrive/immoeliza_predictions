@@ -1,71 +1,51 @@
-# 🏡 ImmoEliza: Application de Prédiction du Prix de l'Immobilier
+# 🏡 ImmoEliza: Real Estate Price Prediction Application
 
-## Aperçu
-ImmoEliza est une application web conviviale qui prédit le prix des biens immobiliers en Belgique en utilisant un modèle d'apprentissage automatique (XGBoost Regressor). Les utilisateurs peuvent saisir les caractéristiques d'une propriété via une interface simple et recevoir instantanément une estimation du prix.
+## Overview
+ImmoEliza is a user-friendly web application that predicts property prices in Belgium using a machine learning model (XGBoost Regressor). Users can enter the characteristics of a property via a simple interface and instantly receive a price estimate.
 
-## Pile technologique:
-* XGBoost pour la régression
+## Technology stack:
+* XGBoost for regression
 * scikit-learn
-* Streamlit pour l'interface web
+* Streamlit for the web interface
 * pandas, numpy
 
-## 🚀 Démarrage
-1.  **Cloner le dépôt**
+## 🚀 Getting started
+1.  **Run the repository**
     ```bash
-    git clone [https://github.com/yourusername/immoeliza.git](https://github.com/yourusername/immoeliza.git)
-    cd immoeliza
+    git clone https://github.com/elsarrive/immoeliza_predictions.git
+    cd immoeliza_predictions
     ```
 
-2.  **Installer les dépendances**
-    Nous recommandons d'utiliser un environnement virtuel (facultatif mais encouragé) :
+2.  **Installing dependencies**  
+  We recommend using a virtual environment (optional but encouraged):
     ```bash
     python -m venv .venv
-    source .venv/bin/activate  # Sur Windows: .venv\Scripts\activate
+    source .venv/bin/activate # On Windows: .venv\Scripts\activate
     ```
-    Installer les dépendances :
+    Install dependencies :
     ```bash
     pip install -r requirements.txt
     ```
-    (Si vous n'avez pas de `requirements.txt`, voir ci-dessous pour une liste pip-ready.)
+    (If you don't have any `requirements.txt`, see below for a pip-ready list).
 
-3.  **Préparer les données**
-    Placez votre fichier CSV de données principal nommé `data.csv` dans le dossier du projet (il doit contenir les données de propriété attendues par `cleaning_dataset.py`).
-
-4.  **Entraîner le modèle**
-    Entraîner et sérialiser le modèle et le scaler (créera `model.pkl` et `scaler.pkl`) :
-    ```bash
+4.  **Prepare the data**  
+  Place your CSV data files named `Kangaroo.csv` and `data.csv` in the project folder (it should contain the property data expected by `cleaning_dataset.py`).
+    
+5. **Train the model**  
+  Train and serialize the model and scaler (will create model.pkl and scaler.pkl):
+    ```
     python XGBoost_model.py
     ```
-
-5.  **Lancer l'application web**
-    ```bash
+    
+5. **Launch the web app**  
+   ```
     streamlit run app.py
-    ```
-    Visitez l'URL fournie par Streamlit (généralement `http://localhost:8501/`) dans votre navigateur.
+   ```
 
-## 🖥️ Structure du Projet
-immoeliza/
-│
-├── app.py                 # Application web Streamlit (point d'entrée principal)
-├── XGBoost_model.py       # Script d'entraînement et de sérialisation du modèle
-├── cleaning_dataset.py    # Nettoyage des données et ingénierie des fonctionnalités
-├── model.pkl              # (Généré) Modèle XGBoost sérialisé
-├── scaler.pkl             # (Généré) Scaler scikit-learn sérialisé
-├── data.csv               # Votre source de données CSV
-├── requirements.txt       # (Recommandé) Dépendances Python
-└── README.md              # Ce fichier !
+    Visit the URL provided by Streamlit (usually (http://localhost:8502) in your browser.
 
-
-## 🏗 Fonctionnalités
-* Prédit le prix de l'immobilier en fonction de dizaines de caractéristiques (localisation, nombre de pièces, surfaces, énergie, extras, ...)
-* Interface utilisateur en temps réel utilisant Streamlit — très facile à utiliser !
-* Prétraitement intelligent des données :
-    * Gère les valeurs manquantes
-    * Applique l'ingénierie des fonctionnalités et les mappings
-    * Utilise uniquement les fonctionnalités pertinentes pour le modèle
-
-## ⚙️ Prérequis
-Exigences minimales :
+## ⚙️ Prerequisites
+Minimum requirements:
 ```
 streamlit
 pandas
@@ -74,17 +54,17 @@ xgboost
 scikit-learn
 ```
 
-## 📝 Comment ça marche ?
-1.  **Saisie Utilisateur :** Vous remplissez le formulaire web décrivant votre propriété.
-2.  **Prétraitement :** Les caractéristiques saisies sont formatées, transformées et nettoyées selon les besoins du modèle.
-3.  **Mise à l'échelle :** Les données sont mises à l'échelle avec le même scaler que lors de l'entraînement du modèle.
-4.  **Prédiction :** Le modèle XGBoost entraîné produit un prix estimé.
-5.  **Résultat :** Le prix estimé apparaît instantanément à l'écran !
+## 📝 How does it work?
+1.  **User input:** You fill in the web form describing your property.
+2.  **Pre-processing:** The characteristics entered are formatted, transformed and cleaned according to the needs of the model.
+3.  **Scaling:** The data is scaled using the same scaler as when the model was trained.
+4.  **Prediction:** The trained XGBoost model produces an estimated price.
+5.  **Result:** The estimated price appears instantly on the screen!
 
-## 🧑‍💻 Notes du Développeur
-* Vous pouvez réentraîner ou ajuster le modèle en modifiant `XGBoost_model.py`.
-* Ajoutez de nouvelles fonctionnalités/données — alignez simplement les noms de colonnes et les types de données avec le code de prétraitement dans `cleaning_dataset.py`.
-* Besoin d'ajouter des pages ou d'étendre l'interface utilisateur ? Streamlit facilite la création d'applications multi-pages (voir la documentation) !
+## 🧑‍💻 Developer Notes
+* You can re-train or adjust the model by modifying `XGBoost_model.py`.
+* Add new functionality/data - simply align the column names and data types with the pre-processing code in `cleaning_dataset.py`.
+* Need to add pages or extend the user interface? Streamlit makes it easy to create multi-page applications (see documentation)!
 
 ## 📬 Contribution
-Les *pull requests* sont les bienvenues ! Pour les changements majeurs, veuillez d'abord ouvrir une *issue* pour discuter d
+Pull requests are welcome!
