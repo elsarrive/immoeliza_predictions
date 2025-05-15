@@ -299,7 +299,7 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     ]
 
     if is_training : 
-        df_giraffe = pd.read_csv('data.csv')
+        df_giraffe = pd.read_csv('dataset/data.csv')
         df_with_giraffe = df_with_giraffe.merge(
         df_giraffe[['propertyId'] + giraffe_cols],  
         how='inner',
