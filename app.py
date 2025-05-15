@@ -3,7 +3,17 @@ import cleaning_dataset as cl
 import streamlit as sl
 import pandas as pd
 import pickle
+import os
+import streamlit as st
 
+st.write("CWD:", os.getcwd())
+st.write("Dossiers/fichiers :", os.listdir())
+if os.path.exists("dataset"):
+    st.write("Contenus dataset/:", os.listdir("dataset"))
+else:
+    st.error("Dossier 'dataset' introuvable.")
+
+st.stop()  # Pour ne pas exécuter plu
 ##############################################
 #### IMPORTATION MODEL AND INITIALIZATION ####
 ##############################################
