@@ -3,34 +3,20 @@ import pandas as pd
 import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-import os
-import os
-
-if os.path.exists("dataset/Kangaroo.csv"):
-    print("Kangaroo.csv exists:", True)
-    print("File size:", os.path.getsize("dataset/Kangaroo.csv"))
-    with open('dataset/Kangaroo.csv', encoding='utf-8') as f:
-        lines = []
-        for i in range(5):
-            try:
-                lines.append(next(f))
-            except StopIteration:
-                break
-    print("Head preview:", "".join(lines))
-else:
-    print("Kangaroo.csv exists:", False)
 
 import pandas as pd
 
 try:
-    df = pd.read_csv('dataset/Kangaroo.csv')
-    print("DF shape:", df.shape)
-except pd.errors.EmptyDataError:
-    print("Kangaroo.csv is empty or unreadable!")
-    df = pd.DataFrame()
+    df = pd.read_csv('dataset/Kangaroo.csv', sep=",")
+    print("Kangaroo CSV rows:", df.shape[0])
+    print("Columns:", df.columns)
+    print(df.head())
+    if df.empty:
+        print("DATAFRAME VIDE : ATTENTION !")
 except Exception as e:
-    print("Autre erreur pandas:", e)
+    print("Erreur lors du chargement du CSV:", e)
 
+# ...suite de ton code après vérification!
 
 # # CLEANING FUNCTION
 
