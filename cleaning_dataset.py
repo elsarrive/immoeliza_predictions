@@ -4,13 +4,33 @@ import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 import os
-print("Kangaroo.csv exists:", os.path.exists("dataset/Kangaroo.csv"))
-print("File size:", os.path.getsize("dataset/Kangaroo.csv"))
-with open('dataset/Kangaroo.csv', encoding='utf-8') as f:
-    head = "".join([next(f) for _ in range(5)])
-print("Head preview:", head)
-df = pd.read_csv('dataset/Kangaroo.csv')
-df.drop(columns=['Unnamed: 0'], axis=1, inplace=True)
+import os
+
+if os.path.exists("dataset/Kangaroo.csv"):
+    print("Kangaroo.csv exists:", True)
+    print("File size:", os.path.getsize("dataset/Kangaroo.csv"))
+    with open('dataset/Kangaroo.csv', encoding='utf-8') as f:
+        lines = []
+        for i in range(5):
+            try:
+                lines.append(next(f))
+            except StopIteration:
+                break
+    print("Head preview:", "".join(lines))
+else:
+    print("Kangaroo.csv exists:", False)
+
+import pandas as pd
+
+try:
+    df = pd.read_csv('dataset/Kangaroo.csv')
+    print("DF shape:", df.shape)
+except pd.errors.EmptyDataError:
+    print("Kangaroo.csv is empty or unreadable!")
+    df = pd.DataFrame()
+except Exception as e:
+    print("Autre erreur pandas:", e)
+
 
 # # CLEANING FUNCTION
 
