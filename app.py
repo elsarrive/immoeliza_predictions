@@ -1,20 +1,20 @@
 '''import XGBoost_model as m
 
-import pickle'''
-
+'''
+import pickle
 import cleaning_dataset as cl
 import pandas as pd
 import os
-import streamlit as st
+import streamlit as sl
 
-st.write("CWD:", os.getcwd())
-st.write("Dossiers/fichiers :", os.listdir())
+sl.write("CWD:", os.getcwd())
+sl.write("Dossiers/fichiers :", os.listdir())
 if os.path.exists("dataset"):
-    st.write("Contenus dataset/:", os.listdir("dataset"))
+    sl.write("Contenus dataset/:", os.listdir("dataset"))
 else:
-    st.error("Dossier 'dataset' introuvable.")
+    sl.error("Dossier 'dataset' introuvable.")
 
-st.stop()  # Pour ne pas exécuter plu
+sl.stop()  # Pour ne pas exécuter plu
 ##############################################
 #### IMPORTATION MODEL AND INITIALIZATION ####
 ##############################################
