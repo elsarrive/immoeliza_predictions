@@ -1,7 +1,8 @@
-import XGBoost_model as m
-import cleaning_dataset as cl
-import pickle
+'''import XGBoost_model as m
 
+import pickle'''
+
+import cleaning_dataset as cl
 import pandas as pd
 import os
 import streamlit as st
