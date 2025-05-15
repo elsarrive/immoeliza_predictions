@@ -1,7 +1,7 @@
 import XGBoost_model as m
 import cleaning_dataset as cl
-import streamlit as sl
 import pickle
+
 import pandas as pd
 import os
 import streamlit as st
