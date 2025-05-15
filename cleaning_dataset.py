@@ -6,17 +6,8 @@ from sklearn.impute import IterativeImputer
 
 import pandas as pd
 
-try:
-    df = pd.read_csv('dataset/Kangaroo.csv', sep=",")
-    print("Kangaroo CSV rows:", df.shape[0])
-    print("Columns:", df.columns)
-    print(df.head())
-    if df.empty:
-        print("DATAFRAME VIDE : ATTENTION !")
-except Exception as e:
-    print("Erreur lors du chargement du CSV:", e)
 
-# ...suite de ton code après vérification!
+# df = pd.read_csv('dataset/Kangaroo.csv', sep=",")
 
 # # CLEANING FUNCTION
 
@@ -310,7 +301,7 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
     ]
 
     if is_training : 
-        df_giraffe = pd.read_csv('dataset/data.csv')
+        #df_giraffe = pd.read_csv('dataset/data.csv')
         df_with_giraffe = df_with_giraffe.merge(
         df_giraffe[['propertyId'] + giraffe_cols],  
         how='inner',
@@ -319,12 +310,12 @@ def cleaning_dataframe(df, df_giraffe = False, is_training = True):
         )
 
     else: 
-        df_giraffe = pd.read_csv('dataset/data.csv')
+        #df_giraffe = pd.read_csv('dataset/data.csv')
 
         for col in giraffe_cols:
             if col not in df_with_giraffe.columns:
                 if col in ['latitude', 'longitude']:
-                    df_with_giraffe[col] = df_giraffe[col].median()
+                    df_with_giraffe[col] = -1
 
                 else: 
                     df_with_giraffe[col] = 0

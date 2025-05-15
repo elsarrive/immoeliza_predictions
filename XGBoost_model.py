@@ -1,4 +1,4 @@
-'''import cleaning_dataset as cl
+import cleaning_dataset as cl
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -53,5 +53,3 @@ with open("model_and_scaler/scaler.pkl", "wb") as f:
 
 with open("model_and_scaler/model.pkl", "wb") as f:
     pickle.dump(xgb_model, f)
-
-'''
