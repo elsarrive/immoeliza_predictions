@@ -3,7 +3,12 @@ import pandas as pd
 import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-
+import os
+print("Kangaroo.csv exists:", os.path.exists("dataset/Kangaroo.csv"))
+print("File size:", os.path.getsize("dataset/Kangaroo.csv"))
+with open('dataset/Kangaroo.csv', encoding='utf-8') as f:
+    head = "".join([next(f) for _ in range(5)])
+print("Head preview:", head)
 df = pd.read_csv('dataset/Kangaroo.csv')
 df.drop(columns=['Unnamed: 0'], axis=1, inplace=True)
 
