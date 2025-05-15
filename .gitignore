@@ -1,0 +1,4 @@
+*.csv
+dataset/Kangaroo.csv
+dataset/Giraffe.csv
+*.parquet
