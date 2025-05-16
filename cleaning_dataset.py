@@ -3,11 +3,12 @@ import pandas as pd
 import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
-
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 
 
-# df = pd.read_csv('dataset/Kangaroo.csv', sep=",")
+df = pd.read_csv('dataset/Kangaroo.csv', sep=",")
 
 # # CLEANING FUNCTION
 
@@ -442,3 +443,23 @@ def transform_cleaning_traintestsplit(df, stats, is_training=True):
 
     return df_final
 
+
+# # TRAIN TEST SPLIT
+df_final = cleaning_dataframe(df, df_giraffe= True)
+
+y = df_final['price']
+X = df_final.drop(['price', 'id'], axis=1)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Cleaning X_train with the imputations 
+stats_from_X_train = stats(X_train)
+X_train_clean = transform_cleaning_traintestsplit(X_train, stats_from_X_train)
+
+# Cleaning X_test with the imputations from X_train
+X_test_clean  = transform_cleaning_traintestsplit(X_test, stats_from_X_train)
+
+# Scaling
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_clean)
+X_test_scaled = scaler.transform(X_test_clean)
